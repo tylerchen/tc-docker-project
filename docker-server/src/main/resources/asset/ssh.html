@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Redirect To Api Management System</title>
+    <link rel="stylesheet" href="./xterm.css"/>
+    <script type="application/javascript" src="./xterm-4.6.0.js"></script>
+    <script type="application/javascript" src="./xterm-addon-attach-0.6.0.js"></script>
+</head>
+<body>
+<div style="width:1000px;" id="xterm"></div>
+<script type="application/javascript">
+    var term = new Terminal({
+rendererType: "canvas", //渲染类型
+        rows: 34, //行数
+        convertEol: true, //启用时，光标将设置为下一行的开头
+        scrollback:10,//终端中的回滚量
+        disableStdin: false, //是否应禁用输入。
+        cursorStyle: 'underline', //光标样式
+        cursorBlink: false, //光标闪烁
+        theme: {
+          foreground: 'yellow', //字体
+          background: '#060101', //背景色
+          cursor: 'help',//设置光标
+        }
+    });
+    var queryString = window.location.href.substring(window.location.href.indexOf('?'));
+    term.open(document.getElementById('xterm'));
+    var socket = new WebSocket('ws://localhost:8080/k8s/ws/ssh'+queryString);
+    var attachAddon = new AttachAddon.AttachAddon(socket);
+    term.loadAddon(attachAddon);
+    //term.attach(socket);
+    term.focus();
+</script>
+</body>
+</html>

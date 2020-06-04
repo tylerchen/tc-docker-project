@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<eh:config
+        xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
+        xmlns:eh='http://www.ehcache.org/v3'
+        xmlns:jsr107='http://www.ehcache.org/v3/jsr107'
+        xsi:schemaLocation="
+        http://www.ehcache.org/v3 http://www.ehcache.org/schema/ehcache-core-3.0.xsd
+        http://www.ehcache.org/v3/jsr107 http://www.ehcache.org/schema/ehcache-107-ext-3.0.xsd">
+
+    <eh:service>
+        <jsr107:defaults enable-statistics="true">
+            <jsr107:cache name="default" template="defaultTemplate"/>
+            <jsr107:cache name="passwordRetryCache" template="passwordTemplate"/>
+        </jsr107:defaults>
+    </eh:service>
+
+    <eh:cache alias="User" uses-template="UserTemplate">
+        <eh:expiry>
+            <eh:ttl unit="seconds">60</eh:ttl>
+        </eh:expiry>
+    </eh:cache>
+
+    <eh:cache-template name="UserTemplate">
+        <eh:expiry>
+            <eh:ttl unit="hours">1</eh:ttl>
+        </eh:expiry>
+        <eh:heap unit="entries">10000</eh:heap>
+    </eh:cache-template>
+
+    <eh:cache-template name="defaultTemplate">
+        <eh:expiry>
+            <eh:ttl unit="seconds">120</eh:ttl>
+        </eh:expiry>
+        <eh:heap unit="entries">10000</eh:heap>
+    </eh:cache-template>
+
+    <eh:cache-template name="passwordTemplate">
+        <eh:expiry>
+            <!-- 登录记录缓存锁定10分钟 -->
+            <eh:tti unit="seconds">3600</eh:tti>
+        </eh:expiry>
+        <eh:heap unit="entries">2000</eh:heap>
+    </eh:cache-template>
+</eh:config>

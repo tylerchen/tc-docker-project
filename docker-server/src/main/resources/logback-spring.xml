@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true" scanPeriod="60 seconds" debug="false">
+    <contextName>logback</contextName>
+    <include resource="org/springframework/boot/logging/logback/base.xml"/>
+    <!-- 输出到 Kafka -->
+    <property name="KAFKA_LOG_PATTERN"
+              value="[KAFKALOG] app_name`#`${appName:-app}`@`date`#`%d{yyyy-MM-dd HH:mm:ss.SSS}`@`level`#`%5p`@`pid`#`${PID:- }`@`logger`#`%-40.40logger{39}`@`message`#`%m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}}"/>
+
+    <appender name="KAFKALOG" class="com.iff.docker.modules.util.LogKafkaHelper$KafkaAppender">
+        <encoder>
+            <pattern>${KAFKA_LOG_PATTERN}</pattern>
+            <charset>UTF8</charset>
+        </encoder>
+    </appender>
+
+    <!--输出到控制台-->
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!--按天生成日志-->
+    <appender name="logFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <Prudent>true</Prudent>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <FileNamePattern>logs/iff-springboot/%d{yyyy-MM-dd}/%d{yyyy-MM-dd}.%i.log</FileNamePattern>
+            <maxFileSize>200MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <Pattern>
+                %d{yyyy-MM-dd HH:mm:ss} -%msg%n
+            </Pattern>
+        </layout>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n</pattern>
+            <charset>UTF-8</charset> <!-- 设置字符集 -->
+        </encoder>
+    </appender>
+
+    <logger name="org.apache.shiro">
+        <level value="ERROR"/>
+        <appender-ref ref="console"/>
+        <appender-ref ref="logFile"/>
+    </logger>
+
+    <logger name="com.foreveross">
+        <level value="DEBUG"/>
+        <appender-ref ref="KAFKALOG"/>
+    </logger>
+
+    <root level="INFO">
+        <appender-ref ref="console"/>
+        <appender-ref ref="logFile"/>
+    </root>
+</configuration>
