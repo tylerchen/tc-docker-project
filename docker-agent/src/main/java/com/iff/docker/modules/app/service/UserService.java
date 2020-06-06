@@ -7,12 +7,11 @@
  ******************************************************************************/
 package com.iff.docker.modules.app.service;
 
-import com.iff.docker.modules.app.dao.UserDao;
 import com.iff.docker.modules.app.entity.User;
-import com.iff.docker.modules.common.BaseService;
-import com.iff.docker.modules.common.Constant;
-import org.springframework.cache.annotation.Cacheable;
+import com.iff.docker.modules.app.entity.UserTypeEnum;
 import org.springframework.stereotype.Service;
+
+import java.util.Date;
 
 /**
  * UserService
@@ -22,16 +21,24 @@ import org.springframework.stereotype.Service;
  * auto generate by qdp.
  */
 @Service
-public class UserService extends BaseService<User, UserDao> {
+public class UserService {
+    private final User user = User.builder()
+            .id(1000L)
+            .userName("admin")
+            .password("admin")
+            .email("admin@admin.com")
+            .name("admin")
+            .type(UserTypeEnum.ADMIN)
+            .createTime(new Date())
+            .updateTime(new Date())
+            .build();
 
-    @Cacheable(value = Constant.CACHE_USER, key = "'get_'+#p0", unless = "#result==null")
     public User get(Long id) {
-        return dao.findById(id).get();
+        return user;
     }
 
-    @Cacheable(value = Constant.CACHE_USER, key = "'findByUserName_'+#p0", unless = "#result==null")
     public User findByUserName(String userName) {
-        return dao.findByUserName(userName);
+        return user;
     }
 
 }

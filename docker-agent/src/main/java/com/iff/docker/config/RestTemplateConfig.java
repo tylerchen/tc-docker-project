@@ -7,6 +7,7 @@
  ******************************************************************************/
 package com.iff.docker.config;
 
+import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -18,7 +19,6 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
@@ -37,15 +37,16 @@ import java.security.cert.CertificateException;
  * @since 2019-10-29
  * auto generate by qdp.
  */
+@Data
 @Configuration
 public class RestTemplateConfig {
 
     @Value("${config.rest-template.ssl.enable:false}")
-    boolean sslEnable;
+    private boolean sslEnable;
     @Value("${spring.security.user.name:}")
-    String userName;
+    private String userName;
     @Value("${spring.security.user.password:}")
-    String password;
+    private String password;
 
     /**
      * 绕过验证
@@ -118,7 +119,6 @@ public class RestTemplateConfig {
     @Configuration
     public class LoadBalancedRestTemplate {
         @Bean
-        @LoadBalanced
         RestTemplate restTemplate() {
             return createRestTemplate(sslEnable, userName, password);
         }

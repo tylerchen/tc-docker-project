@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2019-10-29 @author <a href="mailto:iffiff1@gmail.com">Tyler Chen</a>.
+ * Copyright (c) 2020-06-05 @author <a href="mailto:iffiff1@gmail.com">Tyler Chen</a>.
  * All rights reserved.
  *
  * Contributors:
@@ -7,21 +7,23 @@
  ******************************************************************************/
 package com.iff.docker.config;
 
-import com.querydsl.jpa.impl.JPAQueryFactory;
-import org.springframework.context.annotation.Bean;
+import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
-import javax.persistence.EntityManager;
-
 /**
+ * RsaConfig
+ *
  * @author <a href="mailto:iffiff1@gmail.com">Tyler Chen</a>
- * @since 2019-10-29
- * auto generate by qdp.
+ * @since 2020-06-05
  */
+@Slf4j
+@Data
 @Configuration
-public class QueryDslConfig {
-    @Bean
-    public JPAQueryFactory getJPAQueryFactory(EntityManager entityManager) {
-        return new JPAQueryFactory(entityManager);
-    }
+public class RsaConfig {
+    @Value("${config.docker.rsa.pri-key}")
+    private String priKey;
+    @Value("${config.docker.rsa.pub-key}")
+    private String pubKey;
 }

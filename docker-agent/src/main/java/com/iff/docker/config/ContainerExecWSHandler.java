@@ -27,9 +27,9 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Component
 public class ContainerExecWSHandler extends TextWebSocketHandler {
+    private final Map<String, JSONObject> execSessionMap = new ConcurrentHashMap();
     @Autowired
     DockerClientConfig config;
-    private Map<String, JSONObject> execSessionMap = new ConcurrentHashMap();
 
     DockerClient client() {
         return DockerClientBuilder.getInstance(config).withDockerCmdExecFactory(new NettyDockerCmdExecFactory()).build();
@@ -39,12 +39,17 @@ public class ContainerExecWSHandler extends TextWebSocketHandler {
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         //获得传参
         String containerId = session.getAttributes().get("containerId").toString();
-        String width = session.getAttributes().get("width").toString();
-        String height = session.getAttributes().get("height").toString();
+        //String width = session.getAttributes().get("width").toString();
+        //String height = session.getAttributes().get("height").toString();
         //创建bash
         String execId = createExec(containerId);
         //连接bash
-        Socket socket = connectExec(execId);
+        Socket socket = null;
+        if ("unix".equalsIgnoreCase(config.getDockerHost().getScheme())) {
+            socket = connectExecByUnixSocket(execId);
+        } else {
+            socket = connectExec(config.getDockerHost().getHost(), config.getDockerHost().getPort(), execId);
+        }
         //获得输出
         getExecMessage(session, containerId, socket);
         //修改tty大小
@@ -60,7 +65,7 @@ public class ContainerExecWSHandler extends TextWebSocketHandler {
      */
     private String createExec(String containerId) throws Exception {
         try (DockerClient client = client()) {
-            return client.execCreateCmd(containerId).withAttachStdout(true).withAttachStderr(true).withAttachStdin(true).withTty(true).withCmd("bash").exec().getId();
+            return client.execCreateCmd(containerId).withAttachStdout(true).withAttachStderr(true).withAttachStdin(true).withTty(true).withCmd("sh").exec().getId();
         }
     }
 
@@ -71,15 +76,14 @@ public class ContainerExecWSHandler extends TextWebSocketHandler {
      * @return 连接的socket
      * @throws IOException
      */
-    private Socket connectExec(String execId) throws IOException {
-        String ip = "47.113.118.118";
-        Socket socket = new Socket(ip, 12376);
+    private Socket connectExec(String host, int port, String execId) throws IOException {
+        Socket socket = new Socket(host, port);
         socket.setKeepAlive(true);
         OutputStream out = socket.getOutputStream();
         StringBuffer pw = new StringBuffer();
         {
             pw.append("POST /exec/" + execId + "/start HTTP/1.1\r\n");
-            pw.append("Host: " + ip + ":12376\r\n");
+            pw.append("Host: " + host + ":" + port + "\r\n");
             pw.append("User-Agent: Docker-Client\r\n");
             pw.append("Content-Type: application/json\r\n");
             pw.append("Connection: Upgrade\r\n");
@@ -100,7 +104,6 @@ public class ContainerExecWSHandler extends TextWebSocketHandler {
     }
 
     private Socket connectExecByUnixSocket(String execId) throws IOException {
-        String ip = "47.113.118.118";
         UnixSocketAddress address = new UnixSocketAddress("/var/run/docker.sock");
         UnixSocketChannel channel = UnixSocketChannel.open(address);
         Socket socket = new UnixSocket(channel);

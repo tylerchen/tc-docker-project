@@ -7,6 +7,7 @@
  ******************************************************************************/
 package com.iff.docker.modules.common;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -25,8 +26,9 @@ import java.io.Serializable;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class ResultBean implements Serializable {
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class ResultBean<T> implements Serializable {
     private int status;
     private String message;
-    private Object data;
+    private T data;
 }

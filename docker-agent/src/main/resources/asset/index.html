@@ -23,11 +23,12 @@
           cursor: 'help',//设置光标
         }
     });
+    var queryString = window.location.href.substring(window.location.href.indexOf('?'));
     term.open(document.getElementById('xterm'));
-    var socket = new WebSocket('ws://localhost:8080/k8s/ws/container/exec?width=100&height=50&ip=192.168.93.129&containerId=a58e1b6a8917');
+    //var socket = new WebSocket('ws://localhost:12300/agent/ws/container/exec'+queryString);
+    var socket = new WebSocket('ws://localhost:12300/agent/ws/proxy'+queryString);
     var attachAddon = new AttachAddon.AttachAddon(socket);
     term.loadAddon(attachAddon);
-    //term.attach(socket);
     term.focus();
 </script>
 </body>

@@ -12,6 +12,8 @@ import com.alibaba.fastjson.JSONObject;
 import com.iff.docker.modules.app.entity.User;
 import com.iff.docker.modules.app.service.UserService;
 import com.iff.docker.modules.common.Constant;
+import com.iff.docker.modules.common.LastRequestHolder;
+import com.iff.docker.modules.util.RSAHelper;
 import com.iff.docker.modules.util.TokenUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -51,9 +53,12 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.security.PrivateKey;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import static com.iff.docker.modules.common.Constant.LOGIN_VALID;
 
 /**
  * 安全配置
@@ -66,9 +71,13 @@ import java.util.Set;
 @Configuration
 @EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true, jsr250Enabled = true)
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
-
+    private static PrivateKey key = null;
     @Autowired
     UserService userService;
+    @Autowired
+    RsaConfig rsaConfig;
+    @Autowired
+    DockerConfig dockerConfig;
 
     private static String remoteIp(HttpServletRequest request) {
         if (StringUtils.isNotBlank(request.getHeader("X-Real-IP"))) {
@@ -229,6 +238,28 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 if ("POST".equals(request.getMethod().toUpperCase()) && "/login".equals(request.getServletPath())) {
                     chain.doFilter(request, response);
                     return;
+                }
+                {// valid request
+                    try {
+                        String sign = request.getHeader("sign");
+                        if (StringUtils.isEmpty(sign)) {
+                            sign = request.getParameter("_sign");
+                        }
+                        if (StringUtils.isNotEmpty(sign)) {
+                            if (key == null) {
+                                key = RSAHelper.getPrivateKeyFromHex(rsaConfig.getPriKey());
+                            }
+                            String value = RSAHelper.decryptFromHex(sign, key);
+                            Long lastRequest = Long.valueOf(value);
+                            if (LastRequestHolder.isValidRequest(lastRequest)) {
+                                request.setAttribute(LOGIN_VALID, true);
+                            }
+                        }
+                        if (request.getAttribute("LOGIN_VALID") == null && dockerConfig.getServerEnable()) {
+                            request.setAttribute(LOGIN_VALID, false);
+                        }
+                    } catch (Exception e) {
+                    }
                 }
                 String token = request.getHeader("X-Access-Token");
                 {//添加默认登录的帐号

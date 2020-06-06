@@ -7,22 +7,19 @@
  ******************************************************************************/
 package com.iff.docker.modules.app.controller;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
+import com.iff.docker.config.RestTemplateConfig;
 import com.iff.docker.modules.app.entity.DockerCompose;
-import com.iff.docker.modules.app.entity.FileContent;
-import com.iff.docker.modules.app.entity.QDockerCompose;
+import com.iff.docker.modules.app.entity.DockerComposeConfigFile;
 import com.iff.docker.modules.app.entity.User;
-import com.iff.docker.modules.app.service.DockerComposeConfigFileService;
-import com.iff.docker.modules.app.service.DockerComposeService;
-import com.iff.docker.modules.app.vo.form.DockerComposeFormVO;
-import com.iff.docker.modules.common.BaseController;
 import com.iff.docker.modules.common.Constant;
-import com.iff.docker.modules.common.PageModel;
 import com.iff.docker.modules.common.ResultBean;
-import com.querydsl.core.BooleanBuilder;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 import org.zeroturnaround.exec.InvalidExitValueException;
 import org.zeroturnaround.exec.ProcessExecutor;
 import springfox.documentation.annotations.ApiIgnore;
@@ -41,74 +38,47 @@ import java.util.Map;
 @Slf4j
 @RestController
 @RequestMapping(path = "/docker/compose", produces = Constant.JSON_UTF8)
-public class DockerComposeController extends BaseController {
+public class DockerComposeController extends CustomBaseController {
 
     @Autowired
-    DockerComposeService composeService;
+    RestTemplateConfig restTemplateConfig;
     @Autowired
-    DockerComposeConfigFileService configFileService;
+    RestTemplate restTemplate;
 
-    @PostMapping("/")
-    public ResultBean composeCreateAndUpdate(@RequestBody DockerComposeFormVO form,
-                                             @ApiIgnore @RequestAttribute(Constant.LOGIN_USER) User user) {
-        DockerCompose entity = null;
-        if (form.getId() == null) {
-            entity = DockerCompose.builder()
-                    .name(form.getName())
-                    .description(form.getDescription())
-                    .composeFile(FileContent.builder().content(form.getContent()).name("docker-compose.yml").build())
-                    .build();
-        } else {
-            entity = composeService.findById(form.getId());
-            entity.setName(StringUtils.defaultIfBlank(form.getName(), entity.getName()));
-            entity.setDescription(StringUtils.defaultIfBlank(form.getDescription(), entity.getDescription()));
-            if (form.getContent() != null) {
-                entity.getComposeFile().setContent(form.getContent());
-            }
-        }
-        return success(composeService.save(entity));
+    private String restPath(String path) {
+        return (restTemplateConfig.isSslEnable() ? "https://" : "http://") + getServerHost() + ":" + getServerPort() + "/docker/" + path;
     }
 
-    @GetMapping("/info/{name}")
-    public ResultBean composeInfo(@PathVariable("name") String name,
-                                  @ApiIgnore @RequestAttribute(Constant.LOGIN_USER) User user) {
-        DockerCompose compose = composeService.findByName(name);
-        compose.getConfigFiles().stream().forEach(configFile -> {
-        });
-        return success(compose);
+    private DockerCompose composeInfo(String name) {
+        String url = restPath("/docker/compose/info/{name}");
+        String value = restTemplate.getForObject(url, String.class);
+        ResultBean<DockerCompose> resultBean = JSON.parseObject(value, new TypeReference<ResultBean<DockerCompose>>() {
+        }.getType());
+        return resultBean.getData();
     }
 
-    @GetMapping("/list")
-    public ResultBean composeList(PageModel page,
-                                  @RequestParam(name = "name", required = false) String name,
-                                  @ApiIgnore @RequestAttribute(Constant.LOGIN_USER) User user) {
-        BooleanBuilder conditions = new BooleanBuilder();
-        if (StringUtils.isNotBlank(name)) {
-            conditions.and(QDockerCompose.dockerCompose.name.like("%" + name + "%"));
-        }
-        return success(composeService.findAll(conditions, PageModel.toPage(page)));
-    }
-
-    @DeleteMapping("/{id}")
-    public ResultBean composeDelete(@PathVariable("id") Long id,
-                                    @ApiIgnore @RequestAttribute(Constant.LOGIN_USER) User user) {
-        composeService.delete(id);
+    @DeleteMapping("/{name}")
+    public ResultBean composeDelete(@PathVariable("name") String name,
+                                    @ApiIgnore @RequestAttribute(Constant.LOGIN_USER) User user) throws Exception {
+        deleteComposeFile(name);
         return success();
     }
 
-    @PostMapping("/kill")
-    public ResultBean composeKill(@PathVariable("id") Long id,
-                                  @ApiIgnore @RequestAttribute(Constant.LOGIN_USER) User user) {
+    @PostMapping("/kill/{name}")
+    public ResultBean composeKill(@PathVariable("name") String name,
+                                  @ApiIgnore @RequestAttribute(Constant.LOGIN_USER) User user) throws Exception {
+        if (!existsComposeFile(name)) {
+            return error("Docker Compose file is not exists.");
+        }
         String[] cmd = new String[]{"docker-compose", "kill"};
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DockerCompose compose = composeService.findById(id);
         try {
             Map<String, String> environment = new HashMap<>();
             new ProcessExecutor().command(new String[]{})
-                    .redirectOutput(baos)//Slf4jStream.of(log).asInfo()
-                    .redirectError(baos)//Slf4jStream.of(log).asInfo() // docker-compose will log pull information to stderr
+                    .redirectOutput(baos)
+                    .redirectError(baos)
                     .environment(environment)
-                    .directory(new File("/opt/compose/" + compose.getName()))
+                    .directory(new File(composeBaseDir() + name))
                     .exitValueNormal()
                     .executeNoTimeout();
             return success(baos.toString());
@@ -119,19 +89,21 @@ public class DockerComposeController extends BaseController {
         }
     }
 
-    @PostMapping("/stop")
-    public ResultBean composeStop(@PathVariable("id") Long id,
+    @PostMapping("/stop/{name}")
+    public ResultBean composeStop(@PathVariable("name") String name,
                                   @ApiIgnore @RequestAttribute(Constant.LOGIN_USER) User user) {
+        if (!existsComposeFile(name)) {
+            return error("Docker Compose file is not exists.");
+        }
         String[] cmd = new String[]{"docker-compose", "stop"};
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DockerCompose compose = composeService.findById(id);
         try {
             Map<String, String> environment = new HashMap<>();
             new ProcessExecutor().command(new String[]{})
-                    .redirectOutput(baos)//Slf4jStream.of(log).asInfo()
-                    .redirectError(baos)//Slf4jStream.of(log).asInfo() // docker-compose will log pull information to stderr
+                    .redirectOutput(baos)
+                    .redirectError(baos)
                     .environment(environment)
-                    .directory(new File("/opt/compose/" + compose.getName()))
+                    .directory(new File(composeBaseDir() + name))
                     .exitValueNormal()
                     .executeNoTimeout();
             return success(baos.toString());
@@ -142,19 +114,21 @@ public class DockerComposeController extends BaseController {
         }
     }
 
-    @PostMapping("/start")
-    public ResultBean composeStart(@PathVariable("id") Long id,
+    @PostMapping("/start/{name}")
+    public ResultBean composeStart(@PathVariable("name") String name,
                                    @ApiIgnore @RequestAttribute(Constant.LOGIN_USER) User user) {
+        if (!existsComposeFile(name)) {
+            return error("Docker Compose file is not exists.");
+        }
         String[] cmd = new String[]{"docker-compose", "start"};
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DockerCompose compose = composeService.findById(id);
         try {
             Map<String, String> environment = new HashMap<>();
             new ProcessExecutor().command(new String[]{})
-                    .redirectOutput(baos)//Slf4jStream.of(log).asInfo()
-                    .redirectError(baos)//Slf4jStream.of(log).asInfo() // docker-compose will log pull information to stderr
+                    .redirectOutput(baos)
+                    .redirectError(baos)
                     .environment(environment)
-                    .directory(new File("/opt/compose/" + compose.getName()))
+                    .directory(new File(composeBaseDir() + name))
                     .exitValueNormal()
                     .executeNoTimeout();
             return success(baos.toString());
@@ -165,19 +139,21 @@ public class DockerComposeController extends BaseController {
         }
     }
 
-    @PostMapping("/restart")
-    public ResultBean composeRestart(@PathVariable("id") Long id,
+    @PostMapping("/restart/{name}")
+    public ResultBean composeRestart(@PathVariable("name") String name,
                                      @ApiIgnore @RequestAttribute(Constant.LOGIN_USER) User user) {
+        if (!existsComposeFile(name)) {
+            return error("Docker Compose file is not exists.");
+        }
         String[] cmd = new String[]{"docker-compose", "restart"};
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DockerCompose compose = composeService.findById(id);
         try {
             Map<String, String> environment = new HashMap<>();
             new ProcessExecutor().command(new String[]{})
-                    .redirectOutput(baos)//Slf4jStream.of(log).asInfo()
-                    .redirectError(baos)//Slf4jStream.of(log).asInfo() // docker-compose will log pull information to stderr
+                    .redirectOutput(baos)
+                    .redirectError(baos)
                     .environment(environment)
-                    .directory(new File("/opt/compose/" + compose.getName()))
+                    .directory(new File(composeBaseDir() + name))
                     .exitValueNormal()
                     .executeNoTimeout();
             return success(baos.toString());
@@ -189,18 +165,63 @@ public class DockerComposeController extends BaseController {
     }
 
     @PostMapping("/up")
-    public ResultBean composeUp(@PathVariable("id") Long id,
+    public ResultBean composeUp(@RequestBody DockerCompose compose,
                                 @ApiIgnore @RequestAttribute(Constant.LOGIN_USER) User user) {
-        String[] cmd = new String[]{"docker-compose", "up", "-d"};
+        if (existsComposeFile(compose.getName())) {//down first
+            String[] cmd = new String[]{"docker-compose", "down"};
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            try {
+                Map<String, String> environment = new HashMap<>();
+                new ProcessExecutor().command(new String[]{})
+                        .redirectOutput(baos)
+                        .redirectError(baos)
+                        .environment(environment)
+                        .directory(new File(composeBaseDir() + compose.getName()))
+                        .exitValueNormal()
+                        .executeNoTimeout();
+            } catch (InvalidExitValueException e) {
+                return error("Local Docker Compose exited abnormally with code " + e.getExitValue() + " whilst running command: " + cmd + "\n" + baos.toString());
+            } catch (Exception e) {
+                return error("Error running local Docker Compose command: " + cmd + "\n" + baos.toString(), e);
+            }
+        }
+        {// up
+            String[] cmd = new String[]{"docker-compose", "up", "-d"};
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            try {
+                createComposeFile(compose);
+                Map<String, String> environment = new HashMap<>();
+                new ProcessExecutor().command(new String[]{})
+                        .redirectOutput(baos)
+                        .redirectError(baos)
+                        .environment(environment)
+                        .directory(new File(composeBaseDir() + compose.getName()))
+                        .exitValueNormal()
+                        .executeNoTimeout();
+                return success(baos.toString());
+            } catch (InvalidExitValueException e) {
+                return error("Local Docker Compose exited abnormally with code " + e.getExitValue() + " whilst running command: " + cmd + "\n" + baos.toString());
+            } catch (Exception e) {
+                return error("Error running local Docker Compose command: " + cmd + "\n" + baos.toString(), e);
+            }
+        }
+    }
+
+    @PostMapping("/down/{name}")
+    public ResultBean composeDown(@PathVariable("name") String name,
+                                  @ApiIgnore @RequestAttribute(Constant.LOGIN_USER) User user) {
+        if (!existsComposeFile(name)) {
+            return error("Docker Compose file is not exists.");
+        }
+        String[] cmd = new String[]{"docker-compose", "down"};
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DockerCompose compose = composeService.findById(id);
         try {
             Map<String, String> environment = new HashMap<>();
             new ProcessExecutor().command(new String[]{})
-                    .redirectOutput(baos)//Slf4jStream.of(log).asInfo()
-                    .redirectError(baos)//Slf4jStream.of(log).asInfo() // docker-compose will log pull information to stderr
+                    .redirectOutput(baos)
+                    .redirectError(baos)
                     .environment(environment)
-                    .directory(new File("/opt/compose/" + compose.getName()))
+                    .directory(new File(composeBaseDir() + name))
                     .exitValueNormal()
                     .executeNoTimeout();
             return success(baos.toString());
@@ -211,26 +232,33 @@ public class DockerComposeController extends BaseController {
         }
     }
 
-    @PostMapping("/down")
-    public ResultBean composeDown(@PathVariable("id") Long id,
-                                  @ApiIgnore @RequestAttribute(Constant.LOGIN_USER) User user) {
-        String[] cmd = new String[]{"docker-compose", "down"};
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DockerCompose compose = composeService.findById(id);
-        try {
-            Map<String, String> environment = new HashMap<>();
-            new ProcessExecutor().command(new String[]{})
-                    .redirectOutput(baos)//Slf4jStream.of(log).asInfo()
-                    .redirectError(baos)//Slf4jStream.of(log).asInfo() // docker-compose will log pull information to stderr
-                    .environment(environment)
-                    .directory(new File("/opt/compose/" + compose.getName()))
-                    .exitValueNormal()
-                    .executeNoTimeout();
-            return success(baos.toString());
-        } catch (InvalidExitValueException e) {
-            return error("Local Docker Compose exited abnormally with code " + e.getExitValue() + " whilst running command: " + cmd + "\n" + baos.toString());
-        } catch (Exception e) {
-            return error("Error running local Docker Compose command: " + cmd + "\n" + baos.toString(), e);
+    private String composeBaseDir() {
+        return "/opt/compose/";
+    }
+
+    private void createComposeFile(DockerCompose compose) throws Exception {
+        File dir = new File(composeBaseDir() + compose.getName());
+        String lastUpdateTime = String.valueOf(compose.getUpdateTime().getTime());
+        File updateFile = new File(dir, "___last_update.txt");
+        if (updateFile.exists() && updateFile.isFile() && lastUpdateTime.equals(FileUtils.readFileToString(updateFile))) {
+            log.info("Compose files is up to date.");
+            return;
         }
+        FileUtils.forceMkdir(dir);
+        FileUtils.writeStringToFile(new File(dir, "docker-compose.yml"), compose.getComposeFile().getContent(), "UTF-8", false);
+        FileUtils.writeStringToFile(updateFile, lastUpdateTime, "UTF-8", false);
+        for (DockerComposeConfigFile config : compose.getConfigFiles()) {
+            FileUtils.writeStringToFile(new File(dir, config.getName()), config.getFileContent().getContent(), "UTF-8", false);
+        }
+    }
+
+    private void deleteComposeFile(String name) throws Exception {
+        File dir = new File(composeBaseDir() + name);
+        FileUtils.forceDelete(dir);
+    }
+
+    private boolean existsComposeFile(String name) {
+        File dir = new File(composeBaseDir() + name);
+        return dir.exists() && new File(dir, "docker-compose.yml").exists();
     }
 }

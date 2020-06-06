@@ -24,4 +24,5 @@ public class Constant {
     public static final String MEDIA_ALL = MediaType.ALL_VALUE;
 
     public static final String CACHE_USER = "User";
+    public static final String LOGIN_VALID = "LOGIN_VALID";
 }
