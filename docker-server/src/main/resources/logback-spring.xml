@@ -2,16 +2,6 @@
 <configuration scan="true" scanPeriod="60 seconds" debug="false">
     <contextName>logback</contextName>
     <include resource="org/springframework/boot/logging/logback/base.xml"/>
-    <!-- 输出到 Kafka -->
-    <property name="KAFKA_LOG_PATTERN"
-              value="[KAFKALOG] app_name`#`${appName:-app}`@`date`#`%d{yyyy-MM-dd HH:mm:ss.SSS}`@`level`#`%5p`@`pid`#`${PID:- }`@`logger`#`%-40.40logger{39}`@`message`#`%m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}}"/>
-
-    <appender name="KAFKALOG" class="com.iff.docker.modules.util.LogKafkaHelper$KafkaAppender">
-        <encoder>
-            <pattern>${KAFKA_LOG_PATTERN}</pattern>
-            <charset>UTF8</charset>
-        </encoder>
-    </appender>
 
     <!--输出到控制台-->
     <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
@@ -43,11 +33,6 @@
         <level value="ERROR"/>
         <appender-ref ref="console"/>
         <appender-ref ref="logFile"/>
-    </logger>
-
-    <logger name="com.foreveross">
-        <level value="DEBUG"/>
-        <appender-ref ref="KAFKALOG"/>
     </logger>
 
     <root level="INFO">

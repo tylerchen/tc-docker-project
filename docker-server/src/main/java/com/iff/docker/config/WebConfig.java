@@ -41,7 +41,7 @@ public class WebConfig implements WebMvcConfigurer {
     public void addViewControllers(ViewControllerRegistry registry) {
         //主页
         //registry.addViewController("/").setViewName("forward:/index");
-        registry.addRedirectViewController("/", "/asset/api/index.html");
+        registry.addRedirectViewController("/", "/asset/index.html");
     }
 
     /**

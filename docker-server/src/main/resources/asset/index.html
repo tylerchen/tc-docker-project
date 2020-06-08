@@ -9,6 +9,7 @@
 </head>
 <body>
 <div style="width:1000px;" id="xterm"></div>
+<button onclick="socket.close()">Disconnect</button>
 <script type="application/javascript">
     var term = new Terminal({
         rows: 34, //行数
@@ -23,11 +24,12 @@
           cursor: 'help',//设置光标
         }
     });
+    var queryString = window.location.href.substring(window.location.href.indexOf('?'));
     term.open(document.getElementById('xterm'));
-    var socket = new WebSocket('ws://localhost:8080/k8s/ws/container/exec?width=100&height=50&ip=192.168.93.129&containerId=a58e1b6a8917');
+    //var socket = new WebSocket('ws://'+window.location.host+'/k8s/ws/container/exec'+queryString);
+    var socket = new WebSocket('ws://'+window.location.host+'/k8s/ws/proxy'+queryString);
     var attachAddon = new AttachAddon.AttachAddon(socket);
     term.loadAddon(attachAddon);
-    //term.attach(socket);
     term.focus();
 </script>
 </body>

@@ -12,6 +12,8 @@ import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 
 /**
  * BaseController
@@ -39,6 +41,27 @@ public abstract class BaseController {
             "smal", "smar", "sony", "sph-", "symb", "t-mo", "teli", "tim-", "tsm-", "upg1", "upsi", "vk-v", "voda",
             "wap-", "wapa", "wapi", "wapp", "wapr", "webc", "winw", "winw", "xda", "xda-", "Googlebot-Mobile"};
 
+    public static String urlDecode(String url) {
+        if (url != null && url.length() > 0) {
+            try {
+                return URLDecoder.decode(url, "UTF-8");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return "";
+    }
+
+    public static String urlEncode(String url) {
+        if (url != null && url.length() > 0) {
+            try {
+                return URLEncoder.encode(url, "UTF-8");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return "";
+    }
 
     protected String remoteIp(HttpServletRequest request) {
         if (StringUtils.isNotBlank(request.getHeader("X-Real-IP"))) {
@@ -116,7 +139,6 @@ public abstract class BaseController {
     protected ResultBean error(Throwable e) {
         return result(500, e.getMessage(), null);
     }
-
 
     protected ResultBean result(int status, String message, Object data) {
         return ResultBean.builder().status(status).message(message).data(data).build();

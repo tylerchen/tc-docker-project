@@ -8,8 +8,9 @@
 package com.iff.docker.modules.app.controller;
 
 import com.iff.docker.modules.app.entity.DockerCompose;
-import com.iff.docker.modules.app.entity.FileContent;
 import com.iff.docker.modules.app.entity.QDockerCompose;
+import com.iff.docker.modules.app.entity.DockerComposeConfigFile;
+import com.iff.docker.modules.app.entity.FileContent;
 import com.iff.docker.modules.app.entity.User;
 import com.iff.docker.modules.app.service.DockerComposeConfigFileService;
 import com.iff.docker.modules.app.service.DockerComposeService;
@@ -20,6 +21,7 @@ import com.iff.docker.modules.common.PageModel;
 import com.iff.docker.modules.common.ResultBean;
 import com.querydsl.core.BooleanBuilder;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -108,7 +110,7 @@ public class DockerComposeController extends BaseController {
                     .redirectOutput(baos)//Slf4jStream.of(log).asInfo()
                     .redirectError(baos)//Slf4jStream.of(log).asInfo() // docker-compose will log pull information to stderr
                     .environment(environment)
-                    .directory(new File("/opt/compose/" + compose.getName()))
+                    .directory(new File(composeBaseDir() + compose.getName()))
                     .exitValueNormal()
                     .executeNoTimeout();
             return success(baos.toString());
@@ -131,7 +133,7 @@ public class DockerComposeController extends BaseController {
                     .redirectOutput(baos)//Slf4jStream.of(log).asInfo()
                     .redirectError(baos)//Slf4jStream.of(log).asInfo() // docker-compose will log pull information to stderr
                     .environment(environment)
-                    .directory(new File("/opt/compose/" + compose.getName()))
+                    .directory(new File(composeBaseDir() + compose.getName()))
                     .exitValueNormal()
                     .executeNoTimeout();
             return success(baos.toString());
@@ -154,7 +156,7 @@ public class DockerComposeController extends BaseController {
                     .redirectOutput(baos)//Slf4jStream.of(log).asInfo()
                     .redirectError(baos)//Slf4jStream.of(log).asInfo() // docker-compose will log pull information to stderr
                     .environment(environment)
-                    .directory(new File("/opt/compose/" + compose.getName()))
+                    .directory(new File(composeBaseDir() + compose.getName()))
                     .exitValueNormal()
                     .executeNoTimeout();
             return success(baos.toString());
@@ -177,7 +179,7 @@ public class DockerComposeController extends BaseController {
                     .redirectOutput(baos)//Slf4jStream.of(log).asInfo()
                     .redirectError(baos)//Slf4jStream.of(log).asInfo() // docker-compose will log pull information to stderr
                     .environment(environment)
-                    .directory(new File("/opt/compose/" + compose.getName()))
+                    .directory(new File(composeBaseDir() + compose.getName()))
                     .exitValueNormal()
                     .executeNoTimeout();
             return success(baos.toString());
@@ -195,12 +197,13 @@ public class DockerComposeController extends BaseController {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DockerCompose compose = composeService.findById(id);
         try {
+            createComposeFile(compose);
             Map<String, String> environment = new HashMap<>();
             new ProcessExecutor().command(new String[]{})
                     .redirectOutput(baos)//Slf4jStream.of(log).asInfo()
                     .redirectError(baos)//Slf4jStream.of(log).asInfo() // docker-compose will log pull information to stderr
                     .environment(environment)
-                    .directory(new File("/opt/compose/" + compose.getName()))
+                    .directory(new File(composeBaseDir() + compose.getName()))
                     .exitValueNormal()
                     .executeNoTimeout();
             return success(baos.toString());
@@ -223,7 +226,7 @@ public class DockerComposeController extends BaseController {
                     .redirectOutput(baos)//Slf4jStream.of(log).asInfo()
                     .redirectError(baos)//Slf4jStream.of(log).asInfo() // docker-compose will log pull information to stderr
                     .environment(environment)
-                    .directory(new File("/opt/compose/" + compose.getName()))
+                    .directory(new File(composeBaseDir() + compose.getName()))
                     .exitValueNormal()
                     .executeNoTimeout();
             return success(baos.toString());
@@ -231,6 +234,26 @@ public class DockerComposeController extends BaseController {
             return error("Local Docker Compose exited abnormally with code " + e.getExitValue() + " whilst running command: " + cmd + "\n" + baos.toString());
         } catch (Exception e) {
             return error("Error running local Docker Compose command: " + cmd + "\n" + baos.toString(), e);
+        }
+    }
+
+    private String composeBaseDir() {
+        return "/opt/compose/";
+    }
+
+    private void createComposeFile(DockerCompose compose) throws Exception {
+        File dir = new File(composeBaseDir() + compose.getName());
+        String lastUpdateTime = String.valueOf(compose.getUpdateTime().getTime());
+        File updateFile = new File(dir, "___last_update.txt");
+        if (updateFile.exists() && updateFile.isFile() && lastUpdateTime.equals(FileUtils.readFileToString(updateFile))) {
+            log.info("Compose files is up to date.");
+            return;
+        }
+        FileUtils.forceMkdir(dir);
+        FileUtils.writeStringToFile(new File(dir, "docker-compose.yml"), compose.getComposeFile().getContent(), "UTF-8", false);
+        FileUtils.writeStringToFile(updateFile, lastUpdateTime, "UTF-8", false);
+        for (DockerComposeConfigFile config : compose.getConfigFiles()) {
+            FileUtils.writeStringToFile(new File(dir, config.getName()), config.getFileContent().getContent(), "UTF-8", false);
         }
     }
 }

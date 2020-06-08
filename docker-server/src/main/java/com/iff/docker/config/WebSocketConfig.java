@@ -40,6 +40,8 @@ public class WebSocketConfig implements WebSocketConfigurer {
     ContainerExecWSHandler containerExecWSHandler;
     @Autowired
     SshWSHandler sshWSHandler;
+    @Autowired
+    WsProxyHandler wsProxyHandler;
 
     @Bean
     public ServerEndpointExporter serverEndpointExporter() {
@@ -49,6 +51,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(containerExecWSHandler, "/ws/container/exec").addInterceptors(new WsHandshakeInterceptor()).setAllowedOrigins("*");
         registry.addHandler(sshWSHandler, "/ws/ssh").addInterceptors(new WsHandshakeInterceptor()).setAllowedOrigins("*");
+        registry.addHandler(wsProxyHandler, "/ws/proxy").addInterceptors(new WsHandshakeInterceptor()).setAllowedOrigins("*");
     }
 
     public class WsHandshakeInterceptor extends HttpSessionHandshakeInterceptor {

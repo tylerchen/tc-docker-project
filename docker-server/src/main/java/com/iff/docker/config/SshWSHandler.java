@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Component
 public class SshWSHandler extends TextWebSocketHandler {
-    private Map<String, JSONObject> sshMap = new ConcurrentHashMap();
+    private final Map<String, JSONObject> sshMap = new ConcurrentHashMap();
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
