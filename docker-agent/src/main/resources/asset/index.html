@@ -25,8 +25,8 @@
     });
     var queryString = window.location.href.substring(window.location.href.indexOf('?'));
     term.open(document.getElementById('xterm'));
-    //var socket = new WebSocket('ws://localhost:12300/agent/ws/container/exec'+queryString);
-    var socket = new WebSocket('ws://localhost:12300/agent/ws/proxy'+queryString);
+    //var socket = new WebSocket('ws://'+window.location.host+'/agent/ws/container/exec'+queryString);
+    var socket = new WebSocket('ws://'+window.location.host+'/agent/ws/proxy'+queryString);
     var attachAddon = new AttachAddon.AttachAddon(socket);
     term.loadAddon(attachAddon);
     term.focus();
