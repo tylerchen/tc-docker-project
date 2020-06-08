@@ -1,0 +1,45 @@
+pipeline {
+  agent any
+  environment {
+    projectName = 'docker-agent'
+    jarName = 'docker-agent.jar'
+    envName = 'dev'
+  }
+  stages {
+    stage('compile') {
+      steps {
+      	sh 'pwd'
+        sh 'mvn clean install -Dmaven.test.skip=true'
+      }
+    }
+    stage('copy resource to dir') {
+      steps {
+        sh 'pwd'
+        sh 'cp ${projectName}/target/${jarName} ${projectName}/jenkins/${envName}/${jarName}'
+      }
+    }
+    stage('send to remote address') {
+      steps {
+        sshPublisher(
+          continueOnError: false, failOnError: true,
+          publishers: [
+            sshPublisherDesc(
+              configName: "120.78.147.130",
+              transfers: [
+                sshTransfer(
+                  sourceFiles: "${projectName}/jenkins/${envName}/*",
+                  removePrefix: "${projectName}/jenkins/${envName}",
+                  remoteDirectory: "/dockerfile/${envName}/${projectName}/",
+                  execCommand: "cd /root/dockerfile/${envName}/${projectName}/ && chmod +x deploy.sh && ./deploy.sh"
+                )
+	          ],
+	          usePromotionTimestamp: false,
+              useWorkspaceInPromotion: false,
+              verbose: false
+            )
+	      ]
+	    )
+	  }
+    }
+  }
+}
