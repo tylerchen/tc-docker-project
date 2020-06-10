@@ -1,0 +1,20 @@
+version: '2.2'
+services:
+  docker-server:
+    image: docker-server:1.0.0
+    container_name: docker-server
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "/usr/bin/wget -q --spider localhost:8080/k8s/actuator/health || exit 1"]
+      timeout: 5s
+      retries: 5
+    environment:
+      JAVA_OPTS: "-Xmx400m -Xms400m"
+    ports:
+      - "12388:8080"
+    extra_hosts:
+      - "k8smaster:8.129.218.253"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/localtime:/etc/localtime
+    mem_limit: 500M

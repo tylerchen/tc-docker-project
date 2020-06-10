@@ -1,0 +1,18 @@
+version: '2.2'
+services:
+  docker-agent:
+    image: docker-agent:1.0.0
+    container_name: docker-agent
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "/usr/bin/wget -q --spider localhost:12300/agent/actuator/health || exit 1"]
+      timeout: 5s
+      retries: 5
+    environment:
+      JAVA_OPTS: "-Xmx400m -Xms400m"
+    ports:
+      - "12300:12300"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/localtime:/etc/localtime
+    mem_limit: 500M
