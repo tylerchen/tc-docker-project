@@ -1,0 +1,24 @@
+FROM centos:centos7.8.2003
+
+ENV kubernetes_repo='[kubernetes]||name=Kubernetes||baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64/||enabled=1||gpgcheck=1||repo_gpgcheck=1||gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg'
+ENV docker_repo='[docker-ce-stable]||name=Docker CE Stable - $basearch||baseurl=https://mirrors.aliyun.com/docker-ce/linux/centos/7/$basearch/stable||enabled=1||gpgcheck=1||gpgkey=https://mirrors.aliyun.com/docker-ce/linux/centos/gpg'
+
+RUN rm -rf /etc/yum.repos.d/* && \
+    curl -o /etc/yum.repos.d/CentOS-Base.repo https://mirrors.aliyun.com/repo/Centos-7.repo && \
+    echo $kubernetes_repo | sed 's/||/\n/g' > /etc/yum.repos.d/kubernetes.repo && \
+    echo $docker_repo | sed 's/||/\n/g' > /etc/yum.repos.d/docker-ce.repo && \
+    yum -y install java-1.8.0-openjdk && \
+    yum -y install yum-utils device-mapper-persistent-data lvm2 docker-ce docker-ce-cli containerd.io && \
+    yum -y install epel-release && \
+    yum -y install python-pip && \
+    pip install --upgrade pip && \
+    pip install --upgrade setuptools && \
+    curl -L "https://github.com/docker/compose/releases/download/1.24.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose && \
+    chmod +x /usr/local/bin/docker-compose && \
+    ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose && \
+    yum -y install kubelet kubeadm kubectl && \
+    yum clean all
+
+WORKDIR /opt
+
+CMD ["tail", "-f", "/dev/null"]

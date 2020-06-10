@@ -17,10 +17,7 @@ import com.iff.docker.modules.common.ResultBean;
 import com.iff.docker.modules.util.RSAHelper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 import springfox.documentation.annotations.ApiIgnore;
@@ -45,12 +42,14 @@ public class DockerComposeProxyController extends BaseController {
     HttpEntity<String> httpEntity() {
         HttpHeaders requestHeaders = new HttpHeaders();
         requestHeaders.add("sign", RSAHelper.encryptToHex(String.valueOf(System.currentTimeMillis()), rsaConfig.getPubKey()));
+        requestHeaders.setContentType(MediaType.APPLICATION_JSON_UTF8);
         return new HttpEntity<String>(null, requestHeaders);
     }
 
     <T> HttpEntity<T> httpEntity(T body) {
         HttpHeaders requestHeaders = new HttpHeaders();
         requestHeaders.add("sign", RSAHelper.encryptToHex(String.valueOf(System.currentTimeMillis()), rsaConfig.getPubKey()));
+        requestHeaders.setContentType(MediaType.APPLICATION_JSON_UTF8);
         return new HttpEntity<T>(body, requestHeaders);
     }
 

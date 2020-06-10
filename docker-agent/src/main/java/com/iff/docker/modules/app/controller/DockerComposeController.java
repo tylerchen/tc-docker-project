@@ -82,7 +82,7 @@ public class DockerComposeController extends CustomBaseController {
                     .redirectOutput(baos)
                     .redirectError(baos)
                     .environment(environment)
-                    .directory(new File(composeBaseDir() + name))
+                    .directory(new File(composeBaseDir(), name))
                     .exitValueNormal()
                     .executeNoTimeout();
             return success(baos.toString());
@@ -107,7 +107,7 @@ public class DockerComposeController extends CustomBaseController {
                     .redirectOutput(baos)
                     .redirectError(baos)
                     .environment(environment)
-                    .directory(new File(composeBaseDir() + name))
+                    .directory(new File(composeBaseDir(), name))
                     .exitValueNormal()
                     .executeNoTimeout();
             return success(baos.toString());
@@ -132,7 +132,7 @@ public class DockerComposeController extends CustomBaseController {
                     .redirectOutput(baos)
                     .redirectError(baos)
                     .environment(environment)
-                    .directory(new File(composeBaseDir() + name))
+                    .directory(new File(composeBaseDir(), name))
                     .exitValueNormal()
                     .executeNoTimeout();
             return success(baos.toString());
@@ -157,7 +157,7 @@ public class DockerComposeController extends CustomBaseController {
                     .redirectOutput(baos)
                     .redirectError(baos)
                     .environment(environment)
-                    .directory(new File(composeBaseDir() + name))
+                    .directory(new File(composeBaseDir(), name))
                     .exitValueNormal()
                     .executeNoTimeout();
             return success(baos.toString());
@@ -180,13 +180,13 @@ public class DockerComposeController extends CustomBaseController {
                         .redirectOutput(baos)
                         .redirectError(baos)
                         .environment(environment)
-                        .directory(new File(composeBaseDir() + compose.getName()))
+                        .directory(new File(composeBaseDir(), compose.getName()))
                         .exitValueNormal()
                         .executeNoTimeout();
             } catch (InvalidExitValueException e) {
-                return error("Local Docker Compose exited abnormally with code " + e.getExitValue() + " whilst running command: " + cmd + "\n" + baos.toString());
+                return error("Local Docker Compose exited abnormally with code " + e.getExitValue() + " whilst running command: " + StringUtils.join(cmd, " ") + "\n" + baos.toString());
             } catch (Exception e) {
-                return error("Error running local Docker Compose command: " + cmd + "\n" + baos.toString(), e);
+                return error("Error running local Docker Compose command: " + StringUtils.join(cmd, " ") + "\n" + baos.toString(), e);
             }
         }
         {// up
@@ -199,7 +199,7 @@ public class DockerComposeController extends CustomBaseController {
                         .redirectOutput(baos)
                         .redirectError(baos)
                         .environment(environment)
-                        .directory(new File(composeBaseDir() + compose.getName()))
+                        .directory(new File(composeBaseDir(), compose.getName()))
                         .exitValueNormal()
                         .executeNoTimeout();
                 return success(baos.toString());
@@ -225,7 +225,7 @@ public class DockerComposeController extends CustomBaseController {
                     .redirectOutput(baos)
                     .redirectError(baos)
                     .environment(environment)
-                    .directory(new File(composeBaseDir() + name))
+                    .directory(new File(composeBaseDir(), name))
                     .exitValueNormal()
                     .executeNoTimeout();
             return success(baos.toString());
@@ -255,7 +255,7 @@ public class DockerComposeController extends CustomBaseController {
             return;
         }
         FileUtils.forceMkdir(dir);
-        {// make data dir
+        if (StringUtils.isNotEmpty(compose.getDataDirs())) {// make data dir
             String[] split = StringUtils.split(compose.getDataDirs(), ";");
             if (split != null) {
                 String baseDataDir = dataDir();
@@ -272,12 +272,12 @@ public class DockerComposeController extends CustomBaseController {
     }
 
     private void deleteComposeFile(String name) throws Exception {
-        File dir = new File(composeBaseDir() + name);
+        File dir = new File(composeBaseDir(), name);
         FileUtils.forceDelete(dir);
     }
 
     private boolean existsComposeFile(String name) {
-        File dir = new File(composeBaseDir() + name);
+        File dir = new File(composeBaseDir(), name);
         return dir.exists() && new File(dir, "docker-compose.yml").exists();
     }
 }
