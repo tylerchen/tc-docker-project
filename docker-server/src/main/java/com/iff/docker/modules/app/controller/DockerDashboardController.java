@@ -60,8 +60,8 @@ public class DockerDashboardController extends BaseController {
     DockerDashboardVO containers(DockerDashboardVO vo) throws Exception {
         JSONArray array = proxyService.containersJson("47.106.103.169", 12300, true, null, false, null);
         Map<String, Boolean> stacks = new HashMap<>();
-        for (Object o : array) {
-            JSONObject json = (JSONObject) o;
+        for (int i = 0; i < array.size(); i++) {
+            JSONObject json = array.getJSONObject(i);
             if (StringUtils.equalsIgnoreCase("running", json.getString("State"))) {
                 vo.setUpContainers(vo.getUpContainers() + 1);
             }
@@ -95,8 +95,8 @@ public class DockerDashboardController extends BaseController {
         JSONArray array = proxyService.imagesList("47.106.103.169", 12300, true, null, false);
         vo.setVolumes(array == null ? 0 : array.size());
         long totalSize = 0L;
-        for (Object o : array) {
-            JSONObject json = (JSONObject) o;
+        for (int i = 0; i < array.size(); i++) {
+            JSONObject json = array.getJSONObject(i);
             totalSize = totalSize + json.getLongValue("Size");
         }
         vo.setImagesSize(totalSize);
@@ -131,8 +131,8 @@ public class DockerDashboardController extends BaseController {
         JSONArray ports = json.getJSONArray("Ports");
         if (ports != null) {
             List<String> portList = new ArrayList<>();
-            for (Object op : ports) {
-                JSONObject exportPort = (JSONObject) op;
+            for (int i = 0; i < ports.size(); i++) {
+                JSONObject exportPort = ports.getJSONObject(i);
                 portList.add(exportPort.getInteger("PublicPort") + ":" + exportPort.getInteger("PrivatePort"));
             }
             vo.setPublishPort(portList);
@@ -185,8 +185,9 @@ public class DockerDashboardController extends BaseController {
                                                   @ApiIgnore @RequestAttribute(Constant.LOGIN_USER) User user) throws Exception {
         List<DockerContainerVO> list = new ArrayList<>();
         JSONArray array = proxyService.containersJson(ip, port, true, null, false, filters);
-        for (Object o : array) {
-            DockerContainerVO container = container((JSONObject) o);
+        for (int i = 0; i < array.size(); i++) {
+            JSONObject json = array.getJSONObject(i);
+            DockerContainerVO container = container(json);
             container.setPublicIp(ip);
             list.add(container);
         }
@@ -205,8 +206,8 @@ public class DockerDashboardController extends BaseController {
         List<DockerStacksVO> list = new ArrayList<>();
         JSONArray array = proxyService.containersJson(ip, port, all, limit, false, filters);
         Map<String, List<DockerContainerVO>> stacks = new HashMap<>();
-        for (Object o : array) {
-            JSONObject json = (JSONObject) o;
+        for (int i = 0; i < array.size(); i++) {
+            JSONObject json = array.getJSONObject(i);
             if (json.get("Labels") != null) {
                 String stackName = (String) json.getObject("Labels", Map.class).get("com.docker.compose.project");
                 if (stackName != null) {
@@ -215,7 +216,7 @@ public class DockerDashboardController extends BaseController {
                         containers = new ArrayList<>();
                         stacks.put(stackName, containers);
                     }
-                    DockerContainerVO container = container((JSONObject) o);
+                    DockerContainerVO container = container(json);
                     container.setPublicIp(ip);
                     containers.add(container);
                 }
@@ -240,8 +241,8 @@ public class DockerDashboardController extends BaseController {
                                            @ApiIgnore @RequestAttribute(Constant.LOGIN_USER) User user) throws Exception {
         List<DockerImagesVO> list = new ArrayList<>();
         JSONArray array = proxyService.imagesList(ip, port, all, filters, digests);
-        for (Object o : array) {
-            JSONObject json = (JSONObject) o;
+        for (int i = 0; i < array.size(); i++) {
+            JSONObject json = array.getJSONObject(i);
             DockerImagesVO vo = new DockerImagesVO();
             list.add(vo);
             vo.setId(json.getString("Id"));
@@ -267,8 +268,8 @@ public class DockerDashboardController extends BaseController {
         List<DockerVolumesVO> list = new ArrayList<>();
         JSONObject object = proxyService.volumesList(ip, port, filters);
         JSONArray array = object.getJSONArray("Volumes");
-        for (Object o : array) {
-            JSONObject json = (JSONObject) o;
+        for (int i = 0; i < array.size(); i++) {
+            JSONObject json = array.getJSONObject(i);
             DockerVolumesVO vo = new DockerVolumesVO();
             list.add(vo);
             vo.setName(json.getString("Name"));
@@ -293,8 +294,8 @@ public class DockerDashboardController extends BaseController {
                                                @ApiIgnore @RequestAttribute(Constant.LOGIN_USER) User user) throws Exception {
         List<DockerNetworksVO> list = new ArrayList<>();
         JSONArray array = proxyService.networksList(ip, port, filters);
-        for (Object o : array) {
-            JSONObject json = (JSONObject) o;
+        for (int i = 0; i < array.size(); i++) {
+            JSONObject json = array.getJSONObject(i);
             DockerNetworksVO vo = new DockerNetworksVO();
             list.add(vo);
             vo.setId(json.getString("Id"));
@@ -310,8 +311,8 @@ public class DockerDashboardController extends BaseController {
                 if (configs != null) {
                     List<String> subnets = new ArrayList<>();
                     List<String> gateways = new ArrayList<>();
-                    for (Object co : configs) {
-                        JSONObject config = (JSONObject) co;
+                    for (int j = 0; j < configs.size(); j++) {
+                        JSONObject config = configs.getJSONObject(i);
                         subnets.add(config.getString("Subnet"));
                         gateways.add(config.getString("Gateway"));
                     }
