@@ -78,7 +78,7 @@ public class DockerComposeController extends CustomBaseController {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try {
             Map<String, String> environment = new HashMap<>();
-            new ProcessExecutor().command(new String[]{})
+            new ProcessExecutor().command(cmd)
                     .redirectOutput(baos)
                     .redirectError(baos)
                     .environment(environment)
@@ -87,9 +87,9 @@ public class DockerComposeController extends CustomBaseController {
                     .executeNoTimeout();
             return success(baos.toString());
         } catch (InvalidExitValueException e) {
-            return error("Local Docker Compose exited abnormally with code " + e.getExitValue() + " whilst running command: " + cmd + "\n" + baos.toString());
+            return error("Local Docker Compose exited abnormally with code " + e.getExitValue() + " whilst running command: " + StringUtils.join(cmd, " ") + "\n" + baos.toString());
         } catch (Exception e) {
-            return error("Error running local Docker Compose command: " + cmd + "\n" + baos.toString(), e);
+            return error("Error running local Docker Compose command: " + StringUtils.join(cmd, " ") + "\n" + baos.toString(), e);
         }
     }
 
@@ -103,7 +103,7 @@ public class DockerComposeController extends CustomBaseController {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try {
             Map<String, String> environment = new HashMap<>();
-            new ProcessExecutor().command(new String[]{})
+            new ProcessExecutor().command(cmd)
                     .redirectOutput(baos)
                     .redirectError(baos)
                     .environment(environment)
@@ -112,9 +112,9 @@ public class DockerComposeController extends CustomBaseController {
                     .executeNoTimeout();
             return success(baos.toString());
         } catch (InvalidExitValueException e) {
-            return error("Local Docker Compose exited abnormally with code " + e.getExitValue() + " whilst running command: " + cmd + "\n" + baos.toString());
+            return error("Local Docker Compose exited abnormally with code " + e.getExitValue() + " whilst running command: " + StringUtils.join(cmd, " ") + "\n" + baos.toString());
         } catch (Exception e) {
-            return error("Error running local Docker Compose command: " + cmd + "\n" + baos.toString(), e);
+            return error("Error running local Docker Compose command: " + StringUtils.join(cmd, " ") + "\n" + baos.toString(), e);
         }
     }
 
@@ -128,7 +128,7 @@ public class DockerComposeController extends CustomBaseController {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try {
             Map<String, String> environment = new HashMap<>();
-            new ProcessExecutor().command(new String[]{})
+            new ProcessExecutor().command(cmd)
                     .redirectOutput(baos)
                     .redirectError(baos)
                     .environment(environment)
@@ -137,9 +137,9 @@ public class DockerComposeController extends CustomBaseController {
                     .executeNoTimeout();
             return success(baos.toString());
         } catch (InvalidExitValueException e) {
-            return error("Local Docker Compose exited abnormally with code " + e.getExitValue() + " whilst running command: " + cmd + "\n" + baos.toString());
+            return error("Local Docker Compose exited abnormally with code " + e.getExitValue() + " whilst running command: " + StringUtils.join(cmd, " ") + "\n" + baos.toString());
         } catch (Exception e) {
-            return error("Error running local Docker Compose command: " + cmd + "\n" + baos.toString(), e);
+            return error("Error running local Docker Compose command: " + StringUtils.join(cmd, " ") + "\n" + baos.toString(), e);
         }
     }
 
@@ -153,7 +153,7 @@ public class DockerComposeController extends CustomBaseController {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try {
             Map<String, String> environment = new HashMap<>();
-            new ProcessExecutor().command(new String[]{})
+            new ProcessExecutor().command(cmd)
                     .redirectOutput(baos)
                     .redirectError(baos)
                     .environment(environment)
@@ -162,9 +162,9 @@ public class DockerComposeController extends CustomBaseController {
                     .executeNoTimeout();
             return success(baos.toString());
         } catch (InvalidExitValueException e) {
-            return error("Local Docker Compose exited abnormally with code " + e.getExitValue() + " whilst running command: " + cmd + "\n" + baos.toString());
+            return error("Local Docker Compose exited abnormally with code " + e.getExitValue() + " whilst running command: " + StringUtils.join(cmd, " ") + "\n" + baos.toString());
         } catch (Exception e) {
-            return error("Error running local Docker Compose command: " + cmd + "\n" + baos.toString(), e);
+            return error("Error running local Docker Compose command: " + StringUtils.join(cmd, " ") + "\n" + baos.toString(), e);
         }
     }
 
@@ -176,7 +176,7 @@ public class DockerComposeController extends CustomBaseController {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             try {
                 Map<String, String> environment = new HashMap<>();
-                new ProcessExecutor().command(new String[]{})
+                new ProcessExecutor().command(cmd)
                         .redirectOutput(baos)
                         .redirectError(baos)
                         .environment(environment)
@@ -184,9 +184,9 @@ public class DockerComposeController extends CustomBaseController {
                         .exitValueNormal()
                         .executeNoTimeout();
             } catch (InvalidExitValueException e) {
-                return error("Local Docker Compose exited abnormally with code " + e.getExitValue() + " whilst running command: " + StringUtils.join(cmd, " ") + "\n" + baos.toString());
+                log.error("Local Docker Compose exited abnormally with code " + e.getExitValue() + " whilst running command: " + StringUtils.join(cmd, " ") + "\n" + baos.toString());
             } catch (Exception e) {
-                return error("Error running local Docker Compose command: " + StringUtils.join(cmd, " ") + "\n" + baos.toString(), e);
+                log.error("Error running local Docker Compose command: " + StringUtils.join(cmd, " ") + "\n" + baos.toString(), e);
             }
         }
         {// up
@@ -195,7 +195,7 @@ public class DockerComposeController extends CustomBaseController {
             try {
                 createComposeFile(compose);
                 Map<String, String> environment = new HashMap<>();
-                new ProcessExecutor().command(new String[]{})
+                new ProcessExecutor().command(cmd)
                         .redirectOutput(baos)
                         .redirectError(baos)
                         .environment(environment)
@@ -204,9 +204,9 @@ public class DockerComposeController extends CustomBaseController {
                         .executeNoTimeout();
                 return success(baos.toString());
             } catch (InvalidExitValueException e) {
-                return error("Local Docker Compose exited abnormally with code " + e.getExitValue() + " whilst running command: " + cmd + "\n" + baos.toString());
+                return error("Local Docker Compose exited abnormally with code " + e.getExitValue() + " whilst running command: " + StringUtils.join(cmd, " ") + "\n" + baos.toString());
             } catch (Exception e) {
-                return error("Error running local Docker Compose command: " + cmd + "\n" + baos.toString(), e);
+                return error("Error running local Docker Compose command: " + StringUtils.join(cmd, " ") + "\n" + baos.toString(), e);
             }
         }
     }
@@ -221,7 +221,7 @@ public class DockerComposeController extends CustomBaseController {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try {
             Map<String, String> environment = new HashMap<>();
-            new ProcessExecutor().command(new String[]{})
+            new ProcessExecutor().command(cmd)
                     .redirectOutput(baos)
                     .redirectError(baos)
                     .environment(environment)
@@ -230,9 +230,9 @@ public class DockerComposeController extends CustomBaseController {
                     .executeNoTimeout();
             return success(baos.toString());
         } catch (InvalidExitValueException e) {
-            return error("Local Docker Compose exited abnormally with code " + e.getExitValue() + " whilst running command: " + cmd + "\n" + baos.toString());
+            return error("Local Docker Compose exited abnormally with code " + e.getExitValue() + " whilst running command: " + StringUtils.join(cmd, " ") + "\n" + baos.toString());
         } catch (Exception e) {
-            return error("Error running local Docker Compose command: " + cmd + "\n" + baos.toString(), e);
+            return error("Error running local Docker Compose command: " + StringUtils.join(cmd, " ") + "\n" + baos.toString(), e);
         }
     }
 
