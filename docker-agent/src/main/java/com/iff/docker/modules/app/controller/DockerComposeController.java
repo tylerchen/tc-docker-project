@@ -9,6 +9,7 @@ package com.iff.docker.modules.app.controller;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
+import com.iff.docker.config.DockerConfig;
 import com.iff.docker.config.RestTemplateConfig;
 import com.iff.docker.modules.app.entity.DockerCompose;
 import com.iff.docker.modules.app.entity.DockerComposeConfigFile;
@@ -17,6 +18,7 @@ import com.iff.docker.modules.common.Constant;
 import com.iff.docker.modules.common.ResultBean;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
@@ -44,6 +46,8 @@ public class DockerComposeController extends CustomBaseController {
     RestTemplateConfig restTemplateConfig;
     @Autowired
     RestTemplate restTemplate;
+    @Autowired
+    DockerConfig dockerConfig;
 
     private String restPath(String path) {
         return (restTemplateConfig.isSslEnable() ? "https://" : "http://") + getServerHost() + ":" + getServerPort() + "/docker/" + path;
@@ -233,11 +237,17 @@ public class DockerComposeController extends CustomBaseController {
     }
 
     private String composeBaseDir() {
-        return "/opt/compose/";
+        String dir = dockerConfig.getComposeDir();
+        return StringUtils.removeEnd(dir, "/");
+    }
+
+    private String dataDir() {
+        String dir = dockerConfig.getDataDir();
+        return StringUtils.removeEnd(dir, "/");
     }
 
     private void createComposeFile(DockerCompose compose) throws Exception {
-        File dir = new File(composeBaseDir() + compose.getName());
+        File dir = new File(composeBaseDir(), compose.getName());
         String lastUpdateTime = String.valueOf(compose.getUpdateTime().getTime());
         File updateFile = new File(dir, "___last_update.txt");
         if (updateFile.exists() && updateFile.isFile() && lastUpdateTime.equals(FileUtils.readFileToString(updateFile))) {
@@ -245,6 +255,15 @@ public class DockerComposeController extends CustomBaseController {
             return;
         }
         FileUtils.forceMkdir(dir);
+        {// make data dir
+            String[] split = StringUtils.split(compose.getDataDirs(), ";");
+            if (split != null) {
+                String baseDataDir = dataDir();
+                for (String dataDir : split) {
+                    FileUtils.forceMkdir(new File(baseDataDir, dataDir.trim()));
+                }
+            }
+        }
         FileUtils.writeStringToFile(new File(dir, "docker-compose.yml"), compose.getComposeFile().getContent(), "UTF-8", false);
         FileUtils.writeStringToFile(updateFile, lastUpdateTime, "UTF-8", false);
         for (DockerComposeConfigFile config : compose.getConfigFiles()) {

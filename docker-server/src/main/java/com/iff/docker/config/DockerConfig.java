@@ -23,7 +23,6 @@ import org.springframework.context.annotation.Configuration;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
-import java.net.URI;
 import java.security.*;
 import java.util.Objects;
 
@@ -62,6 +61,9 @@ public class DockerConfig {
     private String sslKey;
     @Value("${config.docker.ssl-cert}")
     private String sslCert;
+
+    @Value("${config.docker.nexus.repo:}")
+    private String nexusRepoUrl;
 
     public static SSLConfig sslConfig(String sslCa, String sslKey, String sslCert) {
         return new SSLConfig() {

@@ -47,6 +47,8 @@ public class DockerCompose {
     @OneToMany(mappedBy = "compose", targetEntity = DockerComposeConfigFile.class, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DockerComposeConfigFile> configFiles;
 
+    private String dataDirs;
+
     private String description;
 
     @Column(nullable = false)

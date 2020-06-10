@@ -7,13 +7,10 @@
  ******************************************************************************/
 package com.iff.docker.modules.app.controller;
 
-import com.iff.docker.modules.app.entity.DockerCompose;
-import com.iff.docker.modules.app.entity.QDockerCompose;
-import com.iff.docker.modules.app.entity.DockerComposeConfigFile;
-import com.iff.docker.modules.app.entity.FileContent;
-import com.iff.docker.modules.app.entity.User;
+import com.iff.docker.modules.app.entity.*;
 import com.iff.docker.modules.app.service.DockerComposeConfigFileService;
 import com.iff.docker.modules.app.service.DockerComposeService;
+import com.iff.docker.modules.app.vo.form.DockerComposeConfigFileFormVO;
 import com.iff.docker.modules.app.vo.form.DockerComposeFormVO;
 import com.iff.docker.modules.common.BaseController;
 import com.iff.docker.modules.common.Constant;
@@ -33,6 +30,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * DockerComposeController
@@ -57,18 +55,41 @@ public class DockerComposeController extends BaseController {
         if (form.getId() == null) {
             entity = DockerCompose.builder()
                     .name(form.getName())
+                    .dataDirs(form.getDataDirs())
                     .description(form.getDescription())
                     .composeFile(FileContent.builder().content(form.getContent()).name("docker-compose.yml").build())
                     .build();
         } else {
             entity = composeService.findById(form.getId());
             entity.setName(StringUtils.defaultIfBlank(form.getName(), entity.getName()));
+            entity.setDataDirs(StringUtils.defaultIfBlank(form.getDataDirs(), entity.getDataDirs()));
             entity.setDescription(StringUtils.defaultIfBlank(form.getDescription(), entity.getDescription()));
             if (form.getContent() != null) {
                 entity.getComposeFile().setContent(form.getContent());
             }
         }
-        return success(composeService.save(entity));
+        composeService.save(entity);
+        return success(entity.getId());
+    }
+
+    @PostMapping("/configFile")
+    public ResultBean composeAddOrUpdateConfigFile(@RequestBody DockerComposeConfigFileFormVO form,
+                                                   @ApiIgnore @RequestAttribute(Constant.LOGIN_USER) User user) {
+        DockerCompose entity = composeService.findById(form.getComposeId());
+        Objects.requireNonNull(entity, "Compose file not found.");
+        DockerComposeConfigFile config = null;
+        if (form.getId() != null) {
+            config = configFileService.findById(form.getId());
+            config.getFileContent().setContent(form.getContent());
+        } else {
+            config = DockerComposeConfigFile.builder()
+                    .composeId(form.getComposeId()).name(form.getName()).description(form.getDescription())
+                    .fileContent(FileContent.builder().name(form.getName()).content(form.getContent()).build())
+                    .build();
+        }
+        configFileService.save(config);
+        composeService.save(entity);
+        return success(entity.getId());
     }
 
     @GetMapping("/info/{name}")
@@ -89,6 +110,16 @@ public class DockerComposeController extends BaseController {
             conditions.and(QDockerCompose.dockerCompose.name.like("%" + name + "%"));
         }
         return success(composeService.findAll(conditions, PageModel.toPage(page)));
+    }
+
+    @DeleteMapping("/configFile/{id}")
+    public ResultBean composeConfigDelete(@PathVariable("id") Long id,
+                                          @ApiIgnore @RequestAttribute(Constant.LOGIN_USER) User user) {
+        DockerComposeConfigFile config = configFileService.findById(id);
+        DockerCompose compose = config.getCompose();
+        compose.getConfigFiles().remove(config);
+        composeService.save(compose);
+        return success();
     }
 
     @DeleteMapping("/{id}")
