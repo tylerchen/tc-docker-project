@@ -50,15 +50,17 @@ public class DockerDashboardController extends BaseController {
     @Autowired
     DockerConfig dockerConfig;
 
-    DockerDashboardVO systemInfo(DockerDashboardVO vo) throws Exception {
-        JSONObject json = proxyService.systemInfo("47.106.103.169", 12300);
+    DockerDashboardVO systemInfo(DockerDashboardVO vo, DockerEndpoint endpoint) throws Exception {
+        String[] urlSplit = StringUtils.split(endpoint.getUrl(), ":");
+        JSONObject json = proxyService.systemInfo(urlSplit[0], Integer.valueOf(urlSplit[1]));
         vo.setCups(json.getIntValue("NCPU"));
         vo.setMemories(json.getLongValue("MemTotal"));
         return vo;
     }
 
-    DockerDashboardVO containers(DockerDashboardVO vo) throws Exception {
-        JSONArray array = proxyService.containersJson("47.106.103.169", 12300, true, null, false, null);
+    DockerDashboardVO containers(DockerDashboardVO vo, DockerEndpoint endpoint) throws Exception {
+        String[] urlSplit = StringUtils.split(endpoint.getUrl(), ":");
+        JSONArray array = proxyService.containersJson(urlSplit[0], Integer.valueOf(urlSplit[1]), true, null, false, null);
         Map<String, Boolean> stacks = new HashMap<>();
         for (int i = 0; i < array.size(); i++) {
             JSONObject json = array.getJSONObject(i);
@@ -84,15 +86,17 @@ public class DockerDashboardController extends BaseController {
         return vo;
     }
 
-    DockerDashboardVO volumes(DockerDashboardVO vo) throws Exception {
-        JSONObject json = proxyService.volumesList("47.106.103.169", 12300, null);
+    DockerDashboardVO volumes(DockerDashboardVO vo, DockerEndpoint endpoint) throws Exception {
+        String[] urlSplit = StringUtils.split(endpoint.getUrl(), ":");
+        JSONObject json = proxyService.volumesList(urlSplit[0], Integer.valueOf(urlSplit[1]), null);
         JSONArray array = json.getObject("Volumes", JSONArray.class);
         vo.setVolumes(array == null ? 0 : array.size());
         return vo;
     }
 
-    DockerDashboardVO images(DockerDashboardVO vo) throws Exception {
-        JSONArray array = proxyService.imagesList("47.106.103.169", 12300, true, null, false);
+    DockerDashboardVO images(DockerDashboardVO vo, DockerEndpoint endpoint) throws Exception {
+        String[] urlSplit = StringUtils.split(endpoint.getUrl(), ":");
+        JSONArray array = proxyService.imagesList(urlSplit[0], Integer.valueOf(urlSplit[1]), true, null, false);
         vo.setVolumes(array == null ? 0 : array.size());
         long totalSize = 0L;
         for (int i = 0; i < array.size(); i++) {
@@ -168,10 +172,10 @@ public class DockerDashboardController extends BaseController {
             vo.setPublicIp(endpoint.getPublicIp());
             vo.setUrl(endpoint.getUrl());
 
-            vo = systemInfo(vo);
-            vo = containers(vo);
-            vo = volumes(vo);
-            vo = images(vo);
+            vo = systemInfo(vo, endpoint);
+            vo = containers(vo, endpoint);
+            vo = volumes(vo, endpoint);
+            vo = images(vo, endpoint);
             list.add(vo);
         }
         return list;
