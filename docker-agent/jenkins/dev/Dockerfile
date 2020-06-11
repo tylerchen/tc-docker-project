@@ -1,4 +1,4 @@
-FROM docker-k8s-compose:1.0.0
+FROM jre8-compose:1.0.0
 ADD docker-agent.jar /opt/docker-agent.jar
 ENV JAVA_OPTS_DEF="-server"
 ENV JAVA_OPTS="-Xmx2g -Xms2g"
