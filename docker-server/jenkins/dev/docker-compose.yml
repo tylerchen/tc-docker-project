@@ -17,4 +17,6 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /etc/localtime:/etc/localtime
+      - /opt/docker/app/data:/opt/app/data
+      - /opt/docker/app/logs:/opt/app/logs
     mem_limit: 500M
