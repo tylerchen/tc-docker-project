@@ -13,7 +13,7 @@
     <appender name="logFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <Prudent>true</Prudent>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <FileNamePattern>logs/iff-springboot/%d{yyyy-MM-dd}/%d{yyyy-MM-dd}.%i.log</FileNamePattern>
+            <FileNamePattern>logs/%d{yyyy-MM-dd}/%d{yyyy-MM-dd}.%i.log</FileNamePattern>
             <maxFileSize>200MB</maxFileSize>
             <maxHistory>30</maxHistory>
         </rollingPolicy>
