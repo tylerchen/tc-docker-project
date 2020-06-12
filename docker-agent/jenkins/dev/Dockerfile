@@ -8,4 +8,4 @@ ENV JAVA_OPTS="-Xmx2g -Xms2g"
 
 WORKDIR /opt/app
 
-CMD java ${JAVA_OPTS_DEF} ${JAVA_OPTS} -Djava.security.egd=file:/dev/./urandom -jar /opt/docker-agent.jar
+CMD java ${JAVA_OPTS_DEF} ${JAVA_OPTS} -Djava.security.egd=file:/dev/./urandom -jar /opt/app/docker-agent.jar
