@@ -71,7 +71,9 @@ public class WsProxyHandler extends AbstractWebSocketHandler {
     private WebSocketSession createWebSocketClientSession(WebSocketSession webSocketServerSession) {
         try {
             String webSocketQueryString = getWebSocketQueryString(webSocketServerSession);
-            String uriString = "ws://47.106.103.169:12300/agent/ws/container/exec?" + webSocketQueryString;
+            String ip = (String) webSocketServerSession.getAttributes().get("ip");
+            String port = (String) webSocketServerSession.getAttributes().getOrDefault("port", "12300");
+            String uriString = "ws://" + ip + ":" + port + "/agent/ws/container/exec?" + webSocketQueryString;
             log.info("Create WebSocket Proxy to: " + uriString);
             return new StandardWebSocketClient()
                     .doHandshake(new WebSocketProxyClientHandler(webSocketServerSession), new WebSocketHttpHeaders(), URI.create(uriString))

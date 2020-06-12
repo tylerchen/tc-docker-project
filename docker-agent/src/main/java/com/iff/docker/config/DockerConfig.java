@@ -104,13 +104,6 @@ public class DockerConfig {
 
     @Bean
     public DockerClientConfig config() {
-        try {
-            URI uri = URI.create("tcp://47.113.118.118:12376");
-            System.out.println(uri.getHost());
-            System.out.println(uri.getPort());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
         DefaultDockerClientConfig.Builder builder = DefaultDockerClientConfig.createDefaultConfigBuilder();
         builder
                 .withDockerHost(host)
