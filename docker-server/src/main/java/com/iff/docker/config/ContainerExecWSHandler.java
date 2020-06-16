@@ -8,6 +8,7 @@ import com.github.dockerjava.netty.NettyDockerCmdExecFactory;
 import jnr.unixsocket.UnixSocket;
 import jnr.unixsocket.UnixSocketAddress;
 import jnr.unixsocket.UnixSocketChannel;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
@@ -42,7 +43,8 @@ public class ContainerExecWSHandler extends TextWebSocketHandler {
         //String width = session.getAttributes().get("width").toString();
         //String height = session.getAttributes().get("height").toString();
         //创建bash
-        String execId = createExec(containerId);
+        String cmd = StringUtils.defaultString((String) session.getAttributes().get("cmd"), "sh");
+        String execId = createExec(containerId, cmd);
         //连接bash
         Socket socket = null;
         if ("unix".equalsIgnoreCase(config.getDockerHost().getScheme())) {
@@ -63,9 +65,9 @@ public class ContainerExecWSHandler extends TextWebSocketHandler {
      * @return 命令id
      * @throws Exception
      */
-    private String createExec(String containerId) throws Exception {
+    private String createExec(String containerId, String cmd) throws Exception {
         try (DockerClient client = client()) {
-            return client.execCreateCmd(containerId).withAttachStdout(true).withAttachStderr(true).withAttachStdin(true).withTty(true).withCmd("sh").exec().getId();
+            return client.execCreateCmd(containerId).withAttachStdout(true).withAttachStderr(true).withAttachStdin(true).withTty(true).withCmd(cmd).exec().getId();
         }
     }
 
