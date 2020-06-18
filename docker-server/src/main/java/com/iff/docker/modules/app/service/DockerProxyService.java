@@ -330,10 +330,10 @@ public class DockerProxyService {
     //NOT Support: https://docs.docker.com/engine/api/v1.40/#operation/ImagePush
     //NOT Support: https://docs.docker.com/engine/api/v1.40/#operation/ImageTag
     public ResultBean imagesDelete(String ip,
-                                 int port,
-                                 String name,
-                                 boolean force,
-                                 boolean noprune) throws Exception {
+                                   int port,
+                                   String name,
+                                   boolean force,
+                                   boolean noprune) throws Exception {
         String queryParam = queryString("force", force, "noprune", noprune);
         String url = "http://" + ip + ":" + port + "/agent/docker/images/" + name + "?" + queryParam;
         ResponseEntity<ResultBean> exchange = restTemplate.exchange(url, HttpMethod.DELETE, httpEntity(), ResultBean.class);
@@ -540,7 +540,10 @@ public class DockerProxyService {
                                  int port) throws Exception {
         String url = "http://" + ip + ":" + port + "/agent/docker/system/ping";
         ResponseEntity<ResultBean> exchange = restTemplate.exchange(url, HttpMethod.GET, httpEntity(), ResultBean.class);
-        return exchange.getBody();
+        if (exchange.getStatusCode().is2xxSuccessful()) {
+            return ResultBean.builder().status(exchange.getStatusCodeValue()).data("OK").build();
+        }
+        return ResultBean.builder().status(exchange.getStatusCodeValue()).data("ERROR").build();
     }
 
     //TODO
