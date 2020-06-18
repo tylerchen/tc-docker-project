@@ -17,6 +17,7 @@ import com.iff.docker.modules.app.service.DockerProxyService;
 import com.iff.docker.modules.app.vo.dashboard.*;
 import com.iff.docker.modules.common.BaseController;
 import com.iff.docker.modules.common.Constant;
+import com.iff.docker.modules.common.ResultBean;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -49,6 +50,19 @@ public class DockerDashboardController extends BaseController {
     RestTemplate restTemplate;
     @Autowired
     DockerConfig dockerConfig;
+
+    DockerDashboardVO systemStatus(DockerDashboardVO vo, DockerEndpoint endpoint) {
+        String[] urlSplit = StringUtils.split(endpoint.getUrl(), ":");
+        try {
+            ResultBean resultBean = proxyService.systemPing(urlSplit[0], Integer.valueOf(urlSplit[1]));
+            if ("OK".equalsIgnoreCase(String.valueOf(resultBean.getData()))) {
+                vo.setUp(true);
+            }
+        } catch (Exception e) {
+            log.warn(e.getMessage(), e);
+        }
+        return vo;
+    }
 
     DockerDashboardVO systemInfo(DockerDashboardVO vo, DockerEndpoint endpoint) {
         String[] urlSplit = StringUtils.split(endpoint.getUrl(), ":");
@@ -116,7 +130,7 @@ public class DockerDashboardController extends BaseController {
         } catch (Exception e) {
             log.warn(e.getMessage(), e);
         }
-        vo.setVolumes(array == null ? 0 : array.size());
+        vo.setImages(array == null ? 0 : array.size());
         long totalSize = 0L;
         for (JSONObject json : array.toJavaList(JSONObject.class)) {
             totalSize = totalSize + json.getLongValue("Size");
@@ -189,10 +203,13 @@ public class DockerDashboardController extends BaseController {
             vo.setPublicIp(endpoint.getPublicIp());
             vo.setUrl(endpoint.getUrl());
 
-            vo = systemInfo(vo, endpoint);
-            vo = containers(vo, endpoint);
-            vo = volumes(vo, endpoint);
-            vo = images(vo, endpoint);
+            vo = systemStatus(vo, endpoint);
+            if (vo.isUp()) {
+                vo = systemInfo(vo, endpoint);
+                vo = containers(vo, endpoint);
+                vo = volumes(vo, endpoint);
+                vo = images(vo, endpoint);
+            }
             list.add(vo);
         }
         return list;

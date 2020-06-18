@@ -23,6 +23,7 @@ public class DockerDashboardVO {
     private String publicIp;
     private String url;
 
+    private boolean up = false;
     private Date lastUpTime;
     private int stacks = 0;
     private int containers = 0;
