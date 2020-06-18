@@ -50,17 +50,27 @@ public class DockerDashboardController extends BaseController {
     @Autowired
     DockerConfig dockerConfig;
 
-    DockerDashboardVO systemInfo(DockerDashboardVO vo, DockerEndpoint endpoint) throws Exception {
+    DockerDashboardVO systemInfo(DockerDashboardVO vo, DockerEndpoint endpoint) {
         String[] urlSplit = StringUtils.split(endpoint.getUrl(), ":");
-        JSONObject json = proxyService.systemInfo(urlSplit[0], Integer.valueOf(urlSplit[1]));
+        JSONObject json = new JSONObject();
+        try {
+            json = proxyService.systemInfo(urlSplit[0], Integer.valueOf(urlSplit[1]));
+        } catch (Exception e) {
+            log.warn(e.getMessage(), e);
+        }
         vo.setCups(json.getIntValue("NCPU"));
         vo.setMemories(json.getLongValue("MemTotal"));
         return vo;
     }
 
-    DockerDashboardVO containers(DockerDashboardVO vo, DockerEndpoint endpoint) throws Exception {
+    DockerDashboardVO containers(DockerDashboardVO vo, DockerEndpoint endpoint) {
         String[] urlSplit = StringUtils.split(endpoint.getUrl(), ":");
-        JSONArray array = proxyService.containersJson(urlSplit[0], Integer.valueOf(urlSplit[1]), true, null, false, null);
+        JSONArray array = new JSONArray();
+        try {
+            array = proxyService.containersJson(urlSplit[0], Integer.valueOf(urlSplit[1]), true, null, false, null);
+        } catch (Exception e) {
+            log.warn(e.getMessage(), e);
+        }
         Map<String, Boolean> stacks = new HashMap<>();
         for (JSONObject json : array.toJavaList(JSONObject.class)) {
             if (StringUtils.equalsIgnoreCase("running", json.getString("State"))) {
@@ -85,17 +95,27 @@ public class DockerDashboardController extends BaseController {
         return vo;
     }
 
-    DockerDashboardVO volumes(DockerDashboardVO vo, DockerEndpoint endpoint) throws Exception {
+    DockerDashboardVO volumes(DockerDashboardVO vo, DockerEndpoint endpoint) {
         String[] urlSplit = StringUtils.split(endpoint.getUrl(), ":");
-        JSONObject json = proxyService.volumesList(urlSplit[0], Integer.valueOf(urlSplit[1]), null);
+        JSONObject json = new JSONObject();
+        try {
+            json = proxyService.volumesList(urlSplit[0], Integer.valueOf(urlSplit[1]), null);
+        } catch (Exception e) {
+            log.warn(e.getMessage(), e);
+        }
         JSONArray array = json.getObject("Volumes", JSONArray.class);
         vo.setVolumes(array == null ? 0 : array.size());
         return vo;
     }
 
-    DockerDashboardVO images(DockerDashboardVO vo, DockerEndpoint endpoint) throws Exception {
+    DockerDashboardVO images(DockerDashboardVO vo, DockerEndpoint endpoint) {
         String[] urlSplit = StringUtils.split(endpoint.getUrl(), ":");
-        JSONArray array = proxyService.imagesList(urlSplit[0], Integer.valueOf(urlSplit[1]), true, null, false);
+        JSONArray array = new JSONArray();
+        try {
+            array = proxyService.imagesList(urlSplit[0], Integer.valueOf(urlSplit[1]), true, null, false);
+        } catch (Exception e) {
+            log.warn(e.getMessage(), e);
+        }
         vo.setVolumes(array == null ? 0 : array.size());
         long totalSize = 0L;
         for (JSONObject json : array.toJavaList(JSONObject.class)) {
@@ -154,7 +174,7 @@ public class DockerDashboardController extends BaseController {
     @ApiOperation(value = "List EndPoints")
     @GetMapping(path = "/endpoints")
     public List<DockerDashboardVO> endpointsList(@RequestParam(name = "name", required = false) String name,
-                                                 @ApiIgnore @RequestAttribute(Constant.LOGIN_USER) User user) throws Exception {
+                                                 @ApiIgnore @RequestAttribute(Constant.LOGIN_USER) User user) {
         List<DockerDashboardVO> list = new ArrayList<>();
         List<DockerEndpoint> all = null;
         if (StringUtils.isNotEmpty(name)) {
