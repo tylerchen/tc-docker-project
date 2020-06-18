@@ -57,7 +57,7 @@ public class DockerManagementController extends BaseController {
                     .publicIp(form.getPublicIp())
                     .build();
         } else {
-            entity = endpointService.findById(entity.getId());
+            entity = endpointService.findById(form.getId());
             entity.setName(StringUtils.defaultIfBlank(form.getName(), entity.getName()));
             entity.setType(StringUtils.defaultIfBlank(form.getType(), entity.getType()));
             entity.setUrl(StringUtils.defaultIfBlank(form.getUrl(), entity.getUrl()));
